@@ -74,7 +74,7 @@ The game **'Sky Battle'** is inspired by the space shooter games of the early 20
 ![Level Two Screenshot](L2.png)
 
 ### **Level One Win**
-![Level One Win Screenshot](L1%20Win.png)
+![Level One Win Screenshot](L1Win.png)
 
 ### **IMPLEMENTED FEATURES BUT NOT FUNCTIONAL**
 
