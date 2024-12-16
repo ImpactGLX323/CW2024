@@ -18,7 +18,7 @@
   </properties>
 
   <dependencies>
-    <!-- JavaFX dependencies -->
+    <!-- JavaFX dependencies- Uses JDK 19.02 and JavaFX-sdk-19.0.2 -->
     <dependency>
       <groupId>org.openjfx</groupId>
       <artifactId>javafx-controls</artifactId>
@@ -52,7 +52,7 @@
 
   <build>
     <plugins>
-      <!-- Maven Compiler Plugin -->
+      <!-- Maven Compiler Plugins -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -64,7 +64,7 @@
         </configuration>
       </plugin>
 
-      <!-- JavaFX Maven Plugin -->
+      <!-- JavaFX Maven Plugins -->
       <plugin>
         <groupId>org.openjfx</groupId>
         <artifactId>javafx-maven-plugin</artifactId>
