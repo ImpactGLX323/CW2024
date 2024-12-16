@@ -134,6 +134,9 @@ The game **'Sky Battle'** is inspired by the space shooter games of the early 20
 ## **LINKS**
 - **GitHub Repository:**  
   [https://github.com/ImpactGLX323/CW2024](https://github.com/ImpactGLX323/CW2024)
+
+- **Design.pdf(UML Diagram):**
+  [https://github.com/ImpactGLX323/CW2024/docs/Design.pdf](https://github.com/ImpactGLX323/CW2024/docs/Design.pdf)
 # Sky Battle
 
 The link to the Github Repository goes as follows:
