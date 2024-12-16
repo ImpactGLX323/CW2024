@@ -1,4 +1,4 @@
-package com.example.demo;
+package com.example.demo; //Refactored 1
 
 public abstract class Projectile extends ActiveActorDestructible {
 
@@ -8,7 +8,7 @@ public abstract class Projectile extends ActiveActorDestructible {
 
 	@Override
 	public void takeDamage() {
-		this.destroy();
+		destroy();
 	}
 
 	@Override
