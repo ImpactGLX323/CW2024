@@ -19,6 +19,5 @@ public class BossProjectile extends Projectile {
 	@Override
 	public void updateActor() {
 		updatePosition();
-	}
-	
+	}	
 }

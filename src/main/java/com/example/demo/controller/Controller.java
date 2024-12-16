@@ -1,8 +1,7 @@
+// Controller.java
 package com.example.demo.controller;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
+import com.example.demo.Audio;
 import com.example.demo.LevelParent;
 
 import javafx.scene.Scene;
@@ -13,49 +12,96 @@ import javafx.stage.Stage;
 public class Controller {
 
     private static final String LEVEL_ONE_CLASS_NAME = "com.example.demo.LevelOne";
-    private final Stage stage;
+    private static final String LEVEL_TWO_CLASS_NAME = "com.example.demo.LevelTwo";
+    private static final String BACKGROUND_MUSIC_PATH = "com.example.demo.images.BackgroundMusic.mp3";
 
-    public Controller(Stage stage) {
+    private final Stage stage;
+    private final Audio audio;
+    private LevelParent currentLevel;
+
+    public Controller(Stage stage, LevelParent initialLevel, Audio audio) {
         this.stage = stage;
+        this.currentLevel = initialLevel;
+        this.audio = audio;
+        this.stage.setScene(initialLevel.initializeScene());
     }
 
     public void launchGame() {
         stage.show();
         try {
             goToLevel(LEVEL_ONE_CLASS_NAME);
-        } catch (ClassNotFoundException | NoSuchMethodException | InstantiationException 
-                 | IllegalAccessException | InvocationTargetException e) {
-            showError(e);
         } catch (ClassCastException e) {
-            showError(new Exception("The specified class does not extend LevelParent."));
+            showError("An error occurred while launching the game.", e);
         }
     }
 
-    private void goToLevel(String className) throws ClassNotFoundException, NoSuchMethodException,
-            InstantiationException, IllegalAccessException, InvocationTargetException {
-        Class<?> myClass = Class.forName(className);
-        Constructor<?> constructor = myClass.getConstructor(double.class, double.class);
+    private void goToLevel(String className) throws ClassCastException {
+        LevelParent level = createLevelInstance(className);
+        if (level != null) {
+            currentLevel = level;
+            Scene scene = level.initializeScene();
+            stage.setScene(scene);
+            currentLevel.startGame();
 
-        // Ensure the class is compatible with LevelParent
-		
-        Object instance = constructor.newInstance(stage.getHeight(), stage.getWidth());
-        if (!(instance instanceof LevelParent)) {
-            throw new ClassCastException("Class " + className + " does not extend LevelParent.");
+            // Play background music for the new level
+            audio.stopBackgroundMusic();
+            if (className.equals(LEVEL_ONE_CLASS_NAME)) {
+                audio.playBackgroundMusic(BACKGROUND_MUSIC_PATH);
+            } else if (className.equals(LEVEL_TWO_CLASS_NAME)) {
+                audio.playBackgroundMusic(BACKGROUND_MUSIC_PATH);
+            }
         }
-
-        LevelParent myLevel = (LevelParent) instance;
-        Scene scene = myLevel.initializeScene();
-        stage.setScene(scene);
-        myLevel.startGame();
     }
 
-    private void showError(Exception e) {
+    private LevelParent createLevelInstance(String className) throws ClassCastException {
+        try {
+            Class<?> clazz = Class.forName(className);
+            Object instance = clazz.getConstructor(String.class, double.class, double.class, int.class, Stage.class)
+                    .newInstance("background.png", stage.getHeight(), stage.getWidth(), 100, stage);
+            if (!(instance instanceof LevelParent)) {
+                throw new ClassCastException("Class " + className + " does not extend LevelParent.");
+            }
+            return (LevelParent) instance;
+        } catch (Exception e) {
+            showError("Error while creating level instance: " + className, e);
+            return null;
+        }
+    }
+
+    private void showError(String header, Exception e) {
         Alert alert = new Alert(AlertType.ERROR);
         alert.setTitle("Error");
-        alert.setHeaderText("An error occurred while launching the game.");
+        alert.setHeaderText(header);
         alert.setContentText("Details: " + e.getMessage());
-        // Optionally log the stack trace for debugging
         e.printStackTrace();
         alert.showAndWait();
+    }
+
+    public void restartGame() {
+        if (currentLevel != null) {
+            currentLevel.resetLevel();
+            try {
+                goToLevel(LEVEL_ONE_CLASS_NAME);
+            } catch (ClassCastException e) {
+                showError("An error occurred while restarting the game.", e);
+            }
+        }
+    }
+
+    public void goToNextLevel() {
+        if (currentLevel != null) {
+            try {
+                LevelParent nextLevel = createLevelInstance(LEVEL_TWO_CLASS_NAME);
+                if (nextLevel != null) {
+                    currentLevel.goToNextLevel(nextLevel);
+
+                    // Play music for the next level
+                    audio.stopBackgroundMusic();
+                    audio.playBackgroundMusic(BACKGROUND_MUSIC_PATH);
+                }
+            } catch (ClassCastException e) {
+                showError("An error occurred while transitioning to the next level.", e);
+            }
+        }
     }
 }

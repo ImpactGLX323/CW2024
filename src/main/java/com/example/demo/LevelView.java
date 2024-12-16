@@ -15,6 +15,11 @@ public class LevelView {
 	private final GameOverImage gameOverImage;
 	private final HeartDisplay heartDisplay;
 	
+
+	public void resetLevelView() {
+		System.out.println("LevelView reset");
+	}
+	
 	public LevelView(Group root, int heartsToDisplay) {
 		this.root = root;
 		this.heartDisplay = new HeartDisplay(HEART_DISPLAY_X_POSITION, HEART_DISPLAY_Y_POSITION, heartsToDisplay);
@@ -37,9 +42,9 @@ public class LevelView {
 	
 	public void removeHearts(int heartsRemaining) {
 		int currentNumberOfHearts = heartDisplay.getContainer().getChildren().size();
+		heartsRemaining = Math.max(0, Math.min(heartsRemaining, currentNumberOfHearts));
 		for (int i = 0; i < currentNumberOfHearts - heartsRemaining; i++) {
 			heartDisplay.removeHeart();
 		}
 	}
-
 }

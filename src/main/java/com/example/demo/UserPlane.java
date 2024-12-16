@@ -14,6 +14,15 @@ public class UserPlane extends FighterPlane {
 
     private int velocityMultiplier;
     private int numberOfKills;
+    private int killCount = 0;
+
+    public void incrementKillCount(){
+        killCount++;
+    }
+
+    public int getKillCount(){
+        return killCount;
+    }
 
     public UserPlane(int initialHealth) {
         super(IMAGE_NAME, IMAGE_HEIGHT, INITIAL_X_POSITION, INITIAL_Y_POSITION, initialHealth);
@@ -63,7 +72,9 @@ public class UserPlane extends FighterPlane {
         return numberOfKills;
     }
 
-    public void incrementKillCount() {
-        numberOfKills++;
+    public void incrementKillCountBy(int kills) {
+        for (int i = 0; i <kills; i++) {
+        incrementKillCount();
     }
+}
 }

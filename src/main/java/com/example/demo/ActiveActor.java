@@ -1,4 +1,4 @@
-package com.example.demo; //Refactored 1
+package com.example.demo; 
 
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
