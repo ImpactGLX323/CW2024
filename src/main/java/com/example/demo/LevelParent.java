@@ -15,15 +15,20 @@ import javafx.scene.input.KeyCode;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+/**
+ * The {@code LevelParent} class serves as an abstract base class for all game levels.
+ * It manages the background, units, timeline, and scene transitions between levels.
+ */
 public abstract class LevelParent {
 
     private static final String BACKGROUND_MUSIC_PATH = "/com/example/demo/audio/BackgroundMusic.mp3";
     private static final double SCREEN_HEIGHT_ADJUSTMENT = 150;
     private static final int MILLISECOND_DELAY = 50;
+    protected static final int KILLS_TO_ADVANCE = 100;
+
     private final double screenHeight;
     private final double screenWidth;
     private final double enemyMaximumYPosition;
-    protected static final int KILLS_TO_ADVANCE = 100;
 
     private final Group root;
     private final Timeline timeline;
@@ -42,6 +47,15 @@ public abstract class LevelParent {
     private final LevelView levelView;
     private boolean isTransitioning = false;
 
+    /**
+     * Constructs a {@code LevelParent} instance with the specified parameters.
+     *
+     * @param backgroundImageName the file path to the background image
+     * @param screenHeight the height of the game screen
+     * @param screenWidth the width of the game screen
+     * @param playerInitialHealth the initial health of the player's character
+     * @param stage the JavaFX {@code Stage} for displaying the game level
+     */
     public LevelParent(String backgroundImageName, double screenHeight, double screenWidth, int playerInitialHealth, Stage stage) {
         this.root = new Group();
         this.scene = new Scene(root, screenWidth, screenHeight);
@@ -51,7 +65,7 @@ public abstract class LevelParent {
         this.enemyUnits = new ArrayList<>();
         this.userProjectiles = new ArrayList<>();
         this.enemyProjectiles = new ArrayList<>();
-        this.audio = new Audio(); //audio
+        this.audio = new Audio();
 
         this.background = new ImageView(loadImage(backgroundImageName));
         this.screenHeight = screenHeight;
@@ -60,16 +74,40 @@ public abstract class LevelParent {
         this.levelView = instantiateLevelView();
         this.currentNumberOfEnemies = 0;
         this.stage = stage;
+
         initializeTimeline();
         friendlyUnits.add(user);
     }
 
     // Abstract methods to be implemented by subclasses
+    /**
+     * Initializes the friendly units, such as the player's character, for the level.
+     */
     protected abstract void initializeFriendlyUnits();
+
+    /**
+     * Checks the game's state to determine if the game is over.
+     * Implement win or lose conditions in this method.
+     */
     protected abstract void checkIfGameOver();
+
+    /**
+     * Spawns enemy units in the level. The logic for enemy spawning is implemented in subclasses.
+     */
     protected abstract void spawnEnemyUnits();
+
+    /**
+     * Instantiates the {@code LevelView}, which represents the level's visual components.
+     *
+     * @return the {@code LevelView} for the level
+     */
     protected abstract LevelView instantiateLevelView();
 
+    /**
+     * Initializes the scene for the level.
+     * 
+     * @return the {@code Scene} for the level
+     */
     public Scene initializeScene() {
         initializeBackground();
         initializeFriendlyUnits();
@@ -77,66 +115,72 @@ public abstract class LevelParent {
         return scene;
     }
 
+    /**
+     * Starts the game by playing the timeline and background music.
+     */
     public void startGame() {
         background.requestFocus();
         timeline.play();
         audio.playBackgroundMusic(BACKGROUND_MUSIC_PATH);
     }
 
+    /**
+     * Resets the current level by clearing all elements, reinitializing units, and restarting the game.
+     */
     public void resetLevel() {
         friendlyUnits.clear();
         enemyUnits.clear();
         userProjectiles.clear();
         enemyProjectiles.clear();
         currentNumberOfEnemies = 0;
-        timeline.stop();  // Stop the timeline
-        root.getChildren().clear(); // Clears all existing UI elements
-        root.getChildren().add(background); // Add background again to reset the scene
-        initializeFriendlyUnits(); // Initialize units
-        levelView.resetLevelView(); // Reset the UI components related to the level view
-    
+        timeline.stop();
+        root.getChildren().clear();
+        root.getChildren().add(background);
+        initializeFriendlyUnits();
+        levelView.resetLevelView();
+
         // Debugging - Check that resetLevel is being invoked
         System.out.println("resetLevel invoked!");
-    
+
         // Create the restart button
         javafx.scene.control.Button restartButton = new javafx.scene.control.Button("TRY AGAIN");
         restartButton.setLayoutX(screenWidth / 2 - 50);
         restartButton.setLayoutY(screenHeight / 2 + 50);
-        restartButton.setFocusTraversable(true); // Ensure button is focusable
+        restartButton.setFocusTraversable(true);
         restartButton.setOnAction(e -> {
             System.out.println("Restart Button Clicked!");
-            resetLevel();  // Reset the level and restart the game
-            startGame();   // Start the game after reset
+            resetLevel();
+            startGame();
         });
-    
-        // Add the restart button to the root
+
         Platform.runLater(() -> {
-            root.getChildren().add(restartButton);  // Add the restart button
-            root.requestLayout();  // Refresh the layout to display the button
+            root.getChildren().add(restartButton);
+            root.requestLayout();
         });
     }
-    
 
+    /**
+     * Transitions to the specified next level.
+     *
+     * @param nextLevel the next level to transition to
+     */
     public void goToNextLevel(LevelParent nextLevel) {
         if (!isTransitioning) {
             isTransitioning = true;
             try {
                 System.out.println("Transitioning to the next level...");
-    
-                // Stop the current timeline and clear the root
+
                 timeline.stop();
                 root.getChildren().clear();
-    
-                // Ensure the next level initializes properly
+
                 Scene nextScene = nextLevel.initializeScene();
                 if (nextScene == null) {
                     throw new IllegalStateException("Next level scene is null!");
                 }
-    
-                // Set the next scene on the stage
+
                 stage.setScene(nextScene);
                 nextLevel.startGame();
-    
+
                 System.out.println("Transition to next level successful.");
             } catch (Exception e) {
                 System.err.println("Error during level transition: " + e.getMessage());
@@ -149,37 +193,51 @@ public abstract class LevelParent {
         }
     }
 
+    /**
+     * Initializes the game's timeline, which controls the game loop.
+     */
     private void initializeTimeline() {
         timeline.setCycleCount(Timeline.INDEFINITE);
         KeyFrame gameLoop = new KeyFrame(Duration.millis(MILLISECOND_DELAY), e -> updateScene());
         timeline.getKeyFrames().add(gameLoop);
     }
-
+/**
+     * Initializes the background of the level, sets up key listeners for user input, 
+     * and adds the background image to the scene graph.
+     */
     private void initializeBackground() {
-    background.setFocusTraversable(true);
-    background.setFitHeight(screenHeight);
-    background.setFitWidth(screenWidth);
-    background.setOnKeyPressed(e -> {
-        KeyCode kc = e.getCode();
-        if (kc == KeyCode.UP) user.moveUp();
-        if (kc == KeyCode.DOWN) user.moveDown();
-        if (kc == KeyCode.SPACE) fireProjectile();
-    });
+        background.setFocusTraversable(true);
+        background.setFitHeight(screenHeight);
+        background.setFitWidth(screenWidth);
+        background.setOnKeyPressed(e -> {
+            KeyCode kc = e.getCode();
+            if (kc == KeyCode.UP) user.moveUp();
+            if (kc == KeyCode.DOWN) user.moveDown();
+            if (kc == KeyCode.SPACE) fireProjectile();
+        });
 
-    background.setOnKeyReleased(e -> {
-        KeyCode kc = e.getCode();
-        if (kc == KeyCode.UP || kc == KeyCode.DOWN) user.stop();
-    });
+        background.setOnKeyReleased(e -> {
+            KeyCode kc = e.getCode();
+            if (kc == KeyCode.UP || kc == KeyCode.DOWN) user.stop();
+        });
 
-    root.getChildren().add(background);
-}
-        
+        root.getChildren().add(background);
+    }
+
+    /**
+     * Fires a projectile from the user's plane and adds it to the scene and 
+     * tracking list of user projectiles.
+     */
     private void fireProjectile() {
         ActiveActorDestructible projectile = user.fireProjectile();
         root.getChildren().add(projectile);
         userProjectiles.add(projectile);
     }
 
+    /**
+     * Updates the game scene, including spawning enemy units, updating actors, 
+     * handling collisions, and checking for game-over conditions.
+     */
     private void updateScene() {
         spawnEnemyUnits();
         updateActors();
@@ -193,6 +251,10 @@ public abstract class LevelParent {
         checkIfGameOver();
     }
 
+    /**
+     * Updates the state of all actors in the level, including friendly units, 
+     * enemy units, and projectiles.
+     */
     private void updateActors() {
         friendlyUnits.forEach(plane -> plane.updateActor());
         enemyUnits.forEach(enemy -> enemy.updateActor());
@@ -200,6 +262,13 @@ public abstract class LevelParent {
         enemyProjectiles.forEach(projectile -> projectile.updateActor());
     }
 
+    /**
+     * Handles collisions between two lists of actors, applying damage and 
+     * removing destroyed actors from the scene.
+     *
+     * @param projectiles the list of projectiles to check for collisions
+     * @param actors the list of actors to check for collisions
+     */
     private void handleCollisions(List<ActiveActorDestructible> projectiles, List<ActiveActorDestructible> actors) {
         List<ActiveActorDestructible> toRemove = new ArrayList<>();
         for (ActiveActorDestructible projectile : projectiles) {
@@ -218,7 +287,11 @@ public abstract class LevelParent {
         actors.removeAll(toRemove);
         root.getChildren().removeAll(toRemove);
     }
-    
+
+    /**
+     * Handles the case where enemy units penetrate the player's defenses, 
+     * dealing damage to the user and removing the enemy from the scene.
+     */
     private void handleEnemyPenetration() {
         List<ActiveActorDestructible> toDestroy = new ArrayList<>();
         for (ActiveActorDestructible enemy : enemyUnits) {
@@ -231,6 +304,10 @@ public abstract class LevelParent {
         enemyUnits.removeAll(toDestroy); // Remove penetrated enemies
     }
 
+    /**
+     * Removes all actors from the scene and their respective tracking lists 
+     * if they are marked as destroyed.
+     */
     private void removeAllDestroyedActors() {
         removeDestroyedActors(friendlyUnits);
         removeDestroyedActors(enemyUnits);
@@ -238,6 +315,11 @@ public abstract class LevelParent {
         removeDestroyedActors(enemyProjectiles);
     }
 
+    /**
+     * Removes destroyed actors from a specific list and the scene graph.
+     *
+     * @param actors the list of actors to remove
+     */
     private void removeDestroyedActors(List<ActiveActorDestructible> actors) {
         List<ActiveActorDestructible> destroyedActors = actors.stream()
             .filter(ActiveActorDestructible::isDestroyed)
@@ -246,27 +328,45 @@ public abstract class LevelParent {
         actors.removeAll(destroyedActors);
     }
 
+    /**
+     * Updates the kill count for the user based on the number of destroyed enemies.
+     */
     private void updateKillCount() {
         int killsToAdd = Math.max(0, currentNumberOfEnemies - enemyUnits.size());
-            for (int i = 0; i <killsToAdd; i++) {
-                user.incrementKillCount();
-            }
+        for (int i = 0; i < killsToAdd; i++) {
+            user.incrementKillCount();
+        }
         currentNumberOfEnemies = enemyUnits.size();
     }
 
+    /**
+     * Updates the level view to reflect the user's current health.
+     */
     private void updateLevelView() {
         levelView.removeHearts(user.getHealth());
     }
 
+    /**
+     * Determines if an enemy has penetrated the player's defenses by checking 
+     * if the enemy's position exceeds the screen boundaries.
+     *
+     * @param enemy the enemy actor to check
+     * @return true if the enemy has penetrated defenses, false otherwise
+     */
     private boolean enemyHasPenetratedDefenses(ActiveActorDestructible enemy) {
         return Math.abs(enemy.getTranslateX()) > screenWidth;
     }
 
+    /**
+     * Handles the game-over condition when the player wins the level.
+     * Displays a win image and provides buttons for restarting or transitioning 
+     * to the next level.
+     */
     protected void winGame() {
         timeline.stop();
         levelView.showWinImage();
         audio.stopBackgroundMusic();
-    
+
         // Create "Next Level" button
         javafx.scene.control.Button nextLevelButton = new javafx.scene.control.Button("Next Level");
         nextLevelButton.setLayoutX(screenWidth / 2 - 100);
@@ -282,7 +382,7 @@ public abstract class LevelParent {
                 askForRestart();
             }
         });
-    
+
         // Create "Restart" button
         javafx.scene.control.Button restartButton = new javafx.scene.control.Button("TRY AGAIN");
         restartButton.setLayoutX(screenWidth / 2 + 100);
@@ -293,7 +393,7 @@ public abstract class LevelParent {
             resetLevel();
             startGame();
         });
-    
+
         // Add buttons to the root separately
         javafx.application.Platform.runLater(() -> {
             root.getChildren().add(nextLevelButton);  // Add the next level button
@@ -301,7 +401,13 @@ public abstract class LevelParent {
             root.requestLayout();  // Refresh the layout to display the buttons
         });
     }
-    
+
+    /**
+     * Determines the next level based on the current level. 
+     * This method should be overridden by subclasses to define level transitions.
+     *
+     * @return the next {@code LevelParent}, or null if there are no more levels
+     */
     protected LevelParent getNextLevel() {
         if (this instanceof LevelOne) {
             return new LevelTwo(
@@ -314,13 +420,17 @@ public abstract class LevelParent {
         }
         return null;
     }
-    
 
+
+    /**
+     * Handles the game-over condition when the player loses the level.
+     * Displays a game-over image and provides a button to restart the level.
+     */
     protected void loseGame() {
         timeline.stop();
         levelView.showGameOverImage();
         audio.stopBackgroundMusic();
-    
+
         // Create a button to restart the game
         javafx.scene.control.Button restartButton = new javafx.scene.control.Button("TRY AGAIN");
         restartButton.setLayoutX(screenWidth / 2 - 50);
@@ -331,18 +441,27 @@ public abstract class LevelParent {
             resetLevel();
             startGame();
         });
-    
+
         javafx.application.Platform.runLater(() -> {
             root.getChildren().add(restartButton);
             root.requestLayout(); // Refresh the layout to display the button
         });
     }
 
+    /**
+     * Resets the level and starts the game. This method is called when restarting the level.
+     */
     private void askForRestart() {
         resetLevel();
         startGame();
     }
 
+    /**
+     * Loads an image from the specified path. If loading fails, a default image is returned.
+     *
+     * @param path the relative path to the image file
+     * @return the loaded {@code Image} object, or a default image if loading fails
+     */
     private Image loadImage(String path) {
         try {
             return new Image(getClass().getResource(path).toExternalForm());
@@ -352,39 +471,64 @@ public abstract class LevelParent {
         }
     }
 
+    /**
+     * Retrieves the user's plane object.
+     *
+     * @return the {@code UserPlane} representing the user's plane
+     */
     protected UserPlane getUser() {
         return user;
     }
 
+    /**
+     * Retrieves the root group of the scene graph.
+     *
+     * @return the {@code Group} representing the root node of the scene graph
+     */
     protected Group getRoot() {
         return root;
     }
 
+    /**
+     * Retrieves the current number of enemies in the level.
+     *
+     * @return the number of enemy units
+     */
     protected int getCurrentNumberOfEnemies() {
         return enemyUnits.size();
     }
 
+    /**
+     * Adds an enemy unit to the level and includes it in the scene graph.
+     *
+     * @param enemy the {@code ActiveActorDestructible} representing the enemy unit
+     */
     protected void addEnemyUnit(ActiveActorDestructible enemy) {
         enemyUnits.add(enemy);
         root.getChildren().add(enemy);
     }
 
+    /**
+     * Generates enemy fire for all enemy units capable of firing.
+     * Projectiles are added to the scene and tracked.
+     */
     public void generateEnemyFire() {
-        long currentTime = System.currentTimeMillis();
         for (ActiveActorDestructible enemy : enemyUnits) {
-            if (enemy instanceof FighterPlane) {
-                FighterPlane plane = (FighterPlane) enemy;
-                // Check if the plane can fire
-                if (plane.canFire()) {
-                    ActiveActorDestructible projectile = plane.fireProjectile();
-                    if (projectile != null) {
-                        spawnEnemyProjectile(projectile);
-                    }
+            // Use pattern matching for instanceof
+            if (enemy instanceof FighterPlane plane && plane.canFire()) {
+                ActiveActorDestructible projectile = plane.fireProjectile();
+                if (projectile != null) {
+                    spawnEnemyProjectile(projectile);
                 }
             }
         }
     }
     
+    /**
+     * Spawns an enemy projectile by adding it to the scene and tracking list.
+     *
+     * @param projectile the {@code ActiveActorDestructible} representing the enemy projectile
+     */
     private void spawnEnemyProjectile(ActiveActorDestructible projectile) {
         if (projectile != null && !projectile.isDestroyed()) {
             root.getChildren().add(projectile); // Add projectile to the scene
@@ -392,30 +536,66 @@ public abstract class LevelParent {
         }
     }
 
+    /**
+     * Retrieves the maximum Y-position allowed for enemy units on the screen.
+     *
+     * @return the maximum Y-position for enemy units
+     */
     protected double getEnemyMaximumYPosition() {
         return enemyMaximumYPosition;
     }
 
+    /**
+     * Retrieves the width of the game screen.
+     *
+     * @return the screen width
+     */
     protected double getScreenWidth() {
         return screenWidth;
     }
 
+    /**
+     * Retrieves the height of the game screen.
+     *
+     * @return the screen height
+     */
     protected double getScreenHeight() {
         return screenHeight;
     }
 
+    /**
+     * Checks whether the user's plane is destroyed.
+     *
+     * @return {@code true} if the user's plane is destroyed, otherwise {@code false}
+     */
     protected boolean userIsDestroyed() {
         return user.isDestroyed();
     }
 
+    /**
+     * Retrieves the primary stage of the application.
+     *
+     * @return the {@code Stage} representing the main application window
+     */
     public Stage getStage() {
         return stage;
     }
 
+    /**
+     * Retrieves the number of kills made by the user.
+     *
+     * @return the user's kill count
+     */
     public int getUserKillCount() {
         return user.getKillCount();
     }
 
+    /**
+     * Displays an error message in the console and optionally logs the exception.
+     *
+     * @param message the error message to display
+     * @param e the exception to log, or {@code null} if no exception is provided
+     */
     protected void showError(String message, Exception e){
         System.err.println("ERROR: " + message );
         if (e!=null){
